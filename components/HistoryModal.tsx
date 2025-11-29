@@ -15,6 +15,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ event, isOpen, onClose, onS
   const [editedEvent, setEditedEvent] = useState<HistoryEvent | null>(null);
   
   // Refs para archivos
+  const mainImageRef = useRef<HTMLInputElement>(null);
   const bestPlayerInputRef = useRef<HTMLInputElement>(null);
   const topScorerInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +36,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ event, isOpen, onClose, onS
       }
   };
 
-  const handleImageUpload = (field: 'bestPlayerImage' | 'topScorerImage', e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (field: 'imageUrl' | 'bestPlayerImage' | 'topScorerImage', e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
           const reader = new FileReader();
@@ -53,26 +54,45 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ event, isOpen, onClose, onS
       <div className="relative bg-zinc-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-zinc-800 animate-fade-in-up overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
         
         {/* Header Controls */}
-        <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <div className="absolute top-4 right-4 z-30 flex gap-2">
             {isAdminMode && (
-                <button onClick={saveChanges} className="bg-wc-green text-black p-2 rounded-full hover:scale-110 transition-transform shadow-lg">
-                    <Save size={20}/>
+                <button 
+                  onClick={saveChanges} 
+                  className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-full hover:scale-110 transition-transform shadow-lg border border-blue-400 group"
+                  title="Guardar Cambios"
+                >
+                    <Save size={20} className="group-hover:animate-pulse"/>
                 </button>
             )}
             <button 
             onClick={onClose}
-            className="bg-black/50 text-white p-2 rounded-full hover:bg-white hover:text-black transition-all backdrop-blur-sm"
+            className="bg-black/50 text-white p-2 rounded-full hover:bg-white hover:text-black transition-all backdrop-blur-sm border border-white/10"
             >
             <X size={20} />
             </button>
         </div>
 
-        <div className="relative h-72">
-            <img src={editedEvent.imageUrl} className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all" alt={`${editedEvent.year}`} />
+        <div className="relative h-72 group">
+            <img src={editedEvent.imageUrl} className="w-full h-full object-cover transition-all" alt={`${editedEvent.year}`} />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-black/20 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 p-8">
-                <h2 className="text-7xl font-black text-white italic tracking-tighter leading-none">{editedEvent.year}</h2>
-                <div className="flex items-center gap-2 text-wc-green font-bold uppercase tracking-widest mt-2">
+            
+            {/* Botón Edición Imagen Principal - Blanco sobre fondo oscuro */}
+            {isAdminMode && (
+                <div 
+                    className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20"
+                    onClick={() => mainImageRef.current?.click()}
+                >
+                    <div className="bg-white text-black p-3 rounded-full mb-2 shadow-xl animate-bounce-subtle">
+                        <Camera size={32} />
+                    </div>
+                    <span className="text-white font-bold uppercase text-sm tracking-widest bg-black/50 px-3 py-1 rounded">Cambiar Portada</span>
+                    <input type="file" ref={mainImageRef} className="hidden" onChange={(e) => handleImageUpload('imageUrl', e)} accept="image/*" />
+                </div>
+            )}
+
+            <div className="absolute bottom-0 left-0 p-8 z-10 pointer-events-none">
+                <h2 className="text-7xl font-black text-white italic tracking-tighter leading-none drop-shadow-lg">{editedEvent.year}</h2>
+                <div className="flex items-center gap-2 text-wc-green font-bold uppercase tracking-widest mt-2 drop-shadow-md">
                     <MapPin size={16} /> {editedEvent.host}
                 </div>
             </div>

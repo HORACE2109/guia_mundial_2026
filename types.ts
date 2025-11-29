@@ -29,6 +29,28 @@ export interface WorldCupGroup {
   teams: GroupTeam[]; // Array de objetos con nombre y bandera
 }
 
+// --- NUEVOS TIPOS PARA TABLA DE POSICIONES ---
+export interface StandingTeam {
+  id: string;
+  name: string;
+  flag: string;
+  pj: number; // Partidos Jugados
+  pg: number; // Ganados
+  pe: number; // Empatados
+  pp: number; // Perdidos
+  gf: number; // Goles Favor
+  gc: number; // Goles Contra
+  // Dif y Pts se pueden calcular, pero los guardamos para persistencia
+  dif: number; 
+  pts: number;
+}
+
+export interface GroupStanding {
+  id: string; // "A", "B", etc.
+  teams: StandingTeam[];
+}
+// ---------------------------------------------
+
 // --- NUEVOS TIPOS PARA FASE FINAL (BRACKET) ---
 export interface BracketTeam {
     name: string;

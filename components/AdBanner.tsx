@@ -49,10 +49,10 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
           
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex items-center gap-4">
-                {/* Toggle Activo/Inactivo */}
+                {/* Toggle Activo/Inactivo - Botones Sólidos */}
                 <button 
                     onClick={() => onUpdate({ ...zone, active: !zone.active })}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${zone.active ? 'bg-wc-green text-black' : 'bg-red-900/50 text-red-200'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black transition-colors border border-white ${zone.active ? 'bg-[#a3ff00] text-black' : 'bg-red-600 text-white'}`}
                 >
                     <Power size={14} /> {zone.active ? 'VISIBLE' : 'OCULTO'}
                 </button>

@@ -57,12 +57,12 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
     <section className={`py-12 bg-wc-black border-t border-zinc-800 relative ${!isActive ? 'opacity-50 grayscale' : ''}`}>
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* Header Control Admin */}
+        {/* Header Control Admin - Botones Sólidos */}
         {isAdminMode && (
             <div className="absolute top-4 left-4 z-10">
                 <button 
                     onClick={() => onToggleActive(!isActive)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs border transition-all ${isActive ? 'bg-wc-green text-black border-wc-green' : 'bg-red-900/50 text-red-200 border-red-800'}`}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-full font-black text-xs transition-all border-2 border-white shadow-lg hover:scale-105 ${isActive ? 'bg-[#a3ff00] text-black' : 'bg-red-600 text-white'}`}
                 >
                     {isActive ? <><Eye size={14}/> SECCIÓN VISIBLE</> : <><EyeOff size={14}/> SECCIÓN OCULTA</>}
                 </button>
@@ -70,10 +70,12 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
         )}
 
         <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic mb-2">
-                Fase de <span className="text-transparent bg-clip-text bg-gradient-to-r from-wc-blue to-wc-purple">Grupos</span>
+            <h2 className="text-4xl md:text-6xl font-black uppercase italic mb-2 tracking-tighter leading-none">
+                FASE DE <span className="text-wc-green">GRUPOS</span>
             </h2>
-            <p className="text-gray-500 text-sm tracking-widest uppercase">48 Equipos • 12 Grupos • El camino a la gloria</p>
+            <p className="text-white text-lg md:text-xl tracking-[0.2em] uppercase font-bold mt-4 drop-shadow-md opacity-90">
+                48 EQUIPOS • 12 GRUPOS • EL CAMINO A LA GLORIA
+            </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

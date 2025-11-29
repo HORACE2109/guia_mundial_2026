@@ -196,7 +196,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                 {isAdminMode && (
                     <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute bottom-0 right-0 bg-wc-blue text-black p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
+                        className="absolute bottom-0 right-0 bg-white text-black p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
                         title="Cambiar Escudo"
                     >
                         <Camera size={16} />
@@ -223,7 +223,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                             />
                              <button 
                                 onClick={saveChanges}
-                                className="bg-wc-green text-black px-6 py-1 rounded-full font-bold text-sm flex items-center gap-2 hover:bg-white transition-colors shadow-[0_0_10px_rgba(163,255,0,0.2)]"
+                                className="bg-green-600 text-white px-6 py-1 rounded-full font-bold text-sm flex items-center gap-2 hover:bg-green-500 transition-colors shadow-[0_0_10px_rgba(34,197,94,0.4)]"
                             >
                                 <Save size={16} /> GUARDAR CAMBIOS
                             </button>
@@ -378,7 +378,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                              <span className="bg-wc-blue/20 text-wc-blue px-3 py-1 rounded-full text-xs font-bold border border-wc-blue/30">{editedTeam.squad.length} / 26</span>
                          </div>
                          {isAdminMode && (
-                             <button onClick={handleAddPlayer} className="bg-wc-green text-black px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-white shadow-[0_0_15px_rgba(163,255,0,0.3)] transition-all">
+                             <button onClick={handleAddPlayer} className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-all">
                                  <Plus size={20} /> AGREGAR JUGADOR
                              </button>
                          )}
@@ -552,7 +552,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                                 </div>
                             </div>
 
-                            <button onClick={savePlayer} className="w-full bg-white text-black font-black py-4 rounded-xl hover:bg-wc-green hover:scale-[1.02] transition-all mt-4 shadow-lg flex items-center justify-center gap-2">
+                            <button onClick={savePlayer} className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-500 hover:scale-[1.02] transition-all mt-4 shadow-lg flex items-center justify-center gap-2">
                                 <Save size={20} /> GUARDAR JUGADOR
                             </button>
 

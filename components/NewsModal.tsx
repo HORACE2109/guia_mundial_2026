@@ -10,10 +10,12 @@ interface NewsModalProps {
 }
 
 // Helper para extraer ID de YouTube
+// Soporta: youtu.be, youtube.com/watch, youtube.com/shorts, etc.
 const getYouTubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    if (!url) return null;
+    const regExp = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    return (match && match[1].length === 11) ? match[1] : null;
 };
 
 const NewsModal: React.FC<NewsModalProps> = ({ news, isOpen, onClose }) => {
@@ -68,7 +70,7 @@ const NewsModal: React.FC<NewsModalProps> = ({ news, isOpen, onClose }) => {
                 <div className="mb-8 rounded-xl overflow-hidden shadow-2xl border border-zinc-700">
                     <div className="relative pb-[56.25%] h-0">
                         <iframe 
-                            src={`https://www.youtube.com/embed/${videoId}?autoplay=0`}
+                            src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0&origin=${window.location.origin}`}
                             title="YouTube video player"
                             className="absolute top-0 left-0 w-full h-full"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 

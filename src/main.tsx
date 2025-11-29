@@ -1,7 +1,8 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-// import './index.css'; // CSS Movido a index.html para compatibilidad con Preview
+import App from '../App'; // Apunta al App.tsx en la raíz
+import '../index.css';    // Apunta al index.css en la raíz
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

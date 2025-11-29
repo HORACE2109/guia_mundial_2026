@@ -36,18 +36,18 @@ const FeaturedNews: React.FC<FeaturedNewsProps> = ({ data, isAdminMode, onUpdate
   return (
     <section className="relative w-full my-8 animate-fade-in-up">
       
-      {/* --- CONTROLES ADMIN EXTERNOS --- */}
+      {/* --- CONTROLES ADMIN EXTERNOS (BOTONES SÓLIDOS) --- */}
       {isAdminMode && !isEditing && (
         <div className="absolute top-4 left-4 z-50 flex gap-2">
           <button 
             onClick={() => onUpdate({ ...data, active: !data.active })}
-            className={`px-4 py-2 rounded-full font-bold text-xs shadow-xl flex items-center gap-2 border ${data.active ? 'bg-wc-green text-black border-white' : 'bg-red-600 text-white border-red-400'}`}
+            className={`px-6 py-2 rounded-full font-black text-xs shadow-xl flex items-center gap-2 transition-all border-2 border-white hover:scale-105 ${data.active ? 'bg-[#a3ff00] text-black' : 'bg-red-600 text-white'}`}
           >
             {data.active ? <><Eye size={14}/> VISIBLE</> : <><EyeOff size={14}/> OCULTO</>}
           </button>
           <button 
             onClick={() => { setEditData(data); setIsEditing(true); }}
-            className="bg-wc-blue text-black px-4 py-2 rounded-full font-bold text-xs shadow-xl flex items-center gap-2 border border-white hover:scale-105 transition-transform"
+            className="bg-[#00eaff] text-black px-6 py-2 rounded-full font-black text-xs shadow-xl flex items-center gap-2 hover:scale-105 transition-transform border-2 border-white"
           >
             <Edit2 size={14}/> EDITAR PORTADA
           </button>
@@ -105,7 +105,7 @@ const FeaturedNews: React.FC<FeaturedNewsProps> = ({ data, isAdminMode, onUpdate
 
               <div className="flex justify-end gap-4 pt-4 border-t border-zinc-800">
                   <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-white font-bold">Cancelar</button>
-                  <button onClick={handleSave} className="bg-wc-green text-black px-8 py-3 rounded-full font-black flex items-center gap-2 hover:scale-105 transition-transform shadow-[0_0_20px_rgba(163,255,0,0.3)]">
+                  <button onClick={handleSave} className="bg-blue-600 text-white px-8 py-3 rounded-full font-black flex items-center gap-2 hover:scale-105 transition-transform shadow-[0_0_20px_rgba(37,99,235,0.3)]">
                       <Save size={18}/> GUARDAR CAMBIOS
                   </button>
               </div>
@@ -122,19 +122,21 @@ const FeaturedNews: React.FC<FeaturedNewsProps> = ({ data, isAdminMode, onUpdate
                         alt="Featured" 
                         className="w-full h-full object-cover transition-transform duration-[20s] group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-wc-black via-wc-black/60 to-transparent"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-wc-black/80 via-transparent to-transparent"></div>
+                    
+                    {/* DEGRADADOS CINEMATOGRÁFICOS RESTAURADOS */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-transparent"></div>
                 </div>
 
                 {/* Contenido Texto */}
                 <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 pb-12 md:pb-20">
-                    <div className="inline-block bg-red-600 text-white text-xs md:text-sm font-black uppercase tracking-widest px-3 py-1 mb-4 animate-pulse rounded-sm shadow-lg">
+                    <div className="inline-block bg-red-600 text-white text-xs md:text-sm font-black uppercase tracking-widest px-3 py-1 mb-4 animate-pulse rounded-sm shadow-lg border border-red-400/50">
                         ● Breaking News
                     </div>
                     <h2 className="text-4xl md:text-7xl font-black text-white uppercase italic leading-[0.9] mb-4 drop-shadow-2xl max-w-4xl">
                         {data.title}
                     </h2>
-                    <p className="text-lg md:text-2xl text-gray-200 font-light max-w-2xl mb-8 drop-shadow-md border-l-4 border-wc-blue pl-4">
+                    <p className="text-lg md:text-2xl text-gray-200 font-light max-w-2xl mb-8 drop-shadow-md border-l-4 border-wc-blue pl-4 bg-gradient-to-r from-black/50 to-transparent pr-4 py-2 rounded-r">
                         {data.subtitle}
                     </p>
                 </div>
