@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Facebook, Twitter, Instagram, Trophy, Plus, Trash2, Lock, Check, ImageOff, Edit2, Settings, X, Save, Upload, Camera, Star, Medal, Shield, ChevronDown, ChevronUp, PlayCircle, LogOut, RefreshCw, Users, Eye, EyeOff, MapPin, Database } from 'lucide-react';
+import { ChevronRight, Facebook, Twitter, Instagram, Trophy, Plus, Trash2, Lock, Check, ImageOff, Edit2, Settings, X, Save, Upload, Camera, Star, Medal, Shield, ChevronDown, ChevronUp, PlayCircle, LogOut, RefreshCw, Users, Eye, EyeOff, MapPin } from 'lucide-react';
 import Countdown from './components/Countdown';
 import TeamModal from './components/TeamModal';
 import NewsModal from './components/NewsModal';
@@ -16,16 +15,14 @@ import GroupsSection from './components/GroupsSection';
 import StandingsSection from './components/StandingsSection'; 
 import BracketSection from './components/BracketSection'; 
 import NewsTicker from './components/NewsTicker';
-import { Team, NewsItem, Venue, HistoryEvent, AdZone, GameQuestion, PollConfig, FeaturedNewsItem, WorldCupGroup, BracketMatch, GroupStanding, StandingTeam } from './types';
-import { supabase } from './src/supabaseClient'; // Cliente Supabase
+import { Team, NewsItem, Venue, HistoryEvent, AdZone, GameQuestion, PollConfig, FeaturedNewsItem, WorldCupGroup, BracketMatch, GroupStanding, StandingTeam, Player } from './types';
 
 // ==========================================
 // 🟢 CONFIGURACIÓN INICIAL
 // ==========================================
 const DEFAULT_LOGO_URL = "https://cdn-icons-png.flaticon.com/512/8637/8637106.png"; 
 
-// --- DATOS INICIALES ---
-
+// --- DATOS INICIALES (FALLBACK) ---
 const INITIAL_FEATURED_NEWS: FeaturedNewsItem = {
   active: true,
   title: "¡EL MUNDO MIRA HACIA NORTEAMÉRICA!",
@@ -36,50 +33,31 @@ const INITIAL_FEATURED_NEWS: FeaturedNewsItem = {
 const INITIAL_GROUPS: WorldCupGroup[] = Array.from({ length: 12 }, (_, i) => ({
     id: String.fromCharCode(65 + i), 
     teams: [
-        { name: "", flag: "" },
-        { name: "", flag: "" },
-        { name: "", flag: "" },
-        { name: "", flag: "" }
+        { name: "", flag: "" }, { name: "", flag: "" }, { name: "", flag: "" }, { name: "", flag: "" }
     ]
 }));
-
-// Relleno parcial de demo
 INITIAL_GROUPS[0].teams = [
-    { name: "México", flag: "https://flagcdn.com/w40/mx.png" },
-    { name: "Francia", flag: "https://flagcdn.com/w40/fr.png" },
-    { name: "Corea del Sur", flag: "https://flagcdn.com/w40/kr.png" },
-    { name: "Egipto", flag: "https://flagcdn.com/w40/eg.png" }
+    { name: "México", flag: "https://flagcdn.com/w40/mx.png" }, { name: "Francia", flag: "https://flagcdn.com/w40/fr.png" },
+    { name: "Corea del Sur", flag: "https://flagcdn.com/w40/kr.png" }, { name: "Egipto", flag: "https://flagcdn.com/w40/eg.png" }
 ]; 
 INITIAL_GROUPS[1].teams = [
-    { name: "Canadá", flag: "https://flagcdn.com/w40/ca.png" },
-    { name: "Alemania", flag: "https://flagcdn.com/w40/de.png" },
-    { name: "Senegal", flag: "https://flagcdn.com/w40/sn.png" },
-    { name: "Perú", flag: "https://flagcdn.com/w40/pe.png" }
+    { name: "Canadá", flag: "https://flagcdn.com/w40/ca.png" }, { name: "Alemania", flag: "https://flagcdn.com/w40/de.png" },
+    { name: "Senegal", flag: "https://flagcdn.com/w40/sn.png" }, { name: "Perú", flag: "https://flagcdn.com/w40/pe.png" }
 ];
 
-// INICIALIZACIÓN DE TABLA DE POSICIONES (Vacía por defecto, basada en 12 grupos)
-const INITIAL_STANDINGS: GroupStanding[] = Array.from({ length: 12 }, (_, i) => {
-    // Equipos vacíos por defecto
-    const emptyTeams: StandingTeam[] = Array.from({ length: 4 }, (__, ti) => ({
-        id: `t${i}${ti}`,
-        name: "Equipo " + (ti + 1),
-        flag: "",
+const INITIAL_STANDINGS: GroupStanding[] = Array.from({ length: 12 }, (_, i) => ({
+    id: String.fromCharCode(65 + i),
+    teams: Array.from({ length: 4 }, (__, ti) => ({
+        id: `t${i}${ti}`, name: "Equipo " + (ti + 1), flag: "",
         pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dif: 0, pts: 0
-    }));
-
-    return {
-        id: String.fromCharCode(65 + i),
-        teams: emptyTeams
-    };
-});
-// Relleno Demo para Grupo A
+    }))
+}));
 INITIAL_STANDINGS[0].teams = [
     { id: 'mx', name: "México", flag: "https://flagcdn.com/w40/mx.png", pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dif: 0, pts: 0 },
     { id: 'fr', name: "Francia", flag: "https://flagcdn.com/w40/fr.png", pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dif: 0, pts: 0 },
     { id: 'kr', name: "Corea Sur", flag: "https://flagcdn.com/w40/kr.png", pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dif: 0, pts: 0 },
     { id: 'eg', name: "Egipto", flag: "https://flagcdn.com/w40/eg.png", pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dif: 0, pts: 0 }
 ];
-
 
 const INITIAL_BRACKET: BracketMatch[] = [
     { id: 'qf1', label: 'Cuartos 1', team1: {name: 'Ganador 8vo 1'}, team2: {name: 'Ganador 8vo 2'} },
@@ -101,183 +79,39 @@ const INITIAL_NEWS_DATA: NewsItem[] = [
     imageUrl: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=800&q=80",
     videoUrl: "https://www.youtube.com/watch?v=6qF_fzI4v94"
   },
-  {
-    id: 2,
-    title: "La tecnología del balón 2026",
-    summary: "Adidas presenta el prototipo del balón oficial con sensores de movimiento mejorados para el fuera de juego.",
-    content: "Adidas ha vuelto a revolucionar el mercado con la presentación de su nuevo esférico para el 2026. Bautizado provisionalmente como 'Terra', el balón incorpora una unidad de medición inercial (IMU) en su centro.\n\nEste sensor envía datos del balón a la sala de videooperaciones 500 veces por segundo, lo que permite una detección del punto de golpeo muy precisa.\n\nCombinado con la tecnología semiautomatizada para la detección del fuera de juego, promete reducir las pausas del VAR a cuestión de segundos.",
-    date: "18 Oct, 2025",
-    imageUrl: "https://images.unsplash.com/photo-1614632537423-1e6c2e7e0aab?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 3,
-    title: "Fan Fest en Ciudad de México",
-    summary: "El Zócalo se prepara para recibir a más de 100,000 aficionados durante la inauguración.",
-    content: "El Gobierno de la Ciudad de México ha confirmado que el Zócalo capitalino será la sede principal del FIFA Fan Festival durante el mundial.\n\nSe instalarán pantallas gigantes de 8K, zonas de comida con gastronomía de los 48 países participantes y escenarios para conciertos diarios.\n\nSe espera una afluencia récord, superando lo visto en Rusia 2018 y Qatar 2022, aprovechando la pasión local por el fútbol.",
-    date: "15 Oct, 2025",
-    imageUrl: "https://images.unsplash.com/photo-1568194157720-8bbe71144617?auto=format&fit=crop&w=800&q=80",
-  },
+  { id: 2, title: "La tecnología del balón 2026", summary: "Adidas presenta el prototipo del balón oficial.", content: "...", date: "18 Oct, 2025", imageUrl: "https://images.unsplash.com/photo-1614632537423-1e6c2e7e0aab?auto=format&fit=crop&w=800&q=80" },
+  { id: 3, title: "Fan Fest en Ciudad de México", summary: "El Zócalo se prepara para recibir a más de 100,000 aficionados.", content: "...", date: "15 Oct, 2025", imageUrl: "https://images.unsplash.com/photo-1568194157720-8bbe71144617?auto=format&fit=crop&w=800&q=80" },
 ];
 
 const INITIAL_VENUES_DATA: Venue[] = [
-  {
-    id: 1,
-    name: "Estadio Azteca",
-    city: "Ciudad de México",
-    country: "México",
-    capacity: "87,523",
-    imageUrl: "https://images.unsplash.com/photo-1679947632898-9b6c426ba736?auto=format&fit=crop&w=800&q=80",
-    cityDescription: "El templo del fútbol mexicano. Será el primer estadio en albergar tres Copas del Mundo.",
-    climate: "22°C",
-    altitude: "2,240m",
-    timezone: "UTC-6"
-  },
-  {
-    id: 2,
-    name: "MetLife Stadium",
-    city: "New York / NJ",
-    country: "USA",
-    capacity: "82,500",
-    imageUrl: "https://images.unsplash.com/photo-1550690991-31dbd0c212db?auto=format&fit=crop&w=800&q=80",
-    cityDescription: "Un gigante de acero situado en los pantanos de Nueva Jersey. Sede de la Gran Final.",
-    climate: "25°C",
-    altitude: "10m",
-    timezone: "UTC-5"
-  },
-  {
-    id: 3,
-    name: "BC Place",
-    city: "Vancouver",
-    country: "Canadá",
-    capacity: "54,500",
-    imageUrl: "https://images.unsplash.com/photo-1566888596782-c7f41cc1813c?auto=format&fit=crop&w=800&q=80",
-    cityDescription: "Joya arquitectónica moderna entre montañas y mar.",
-    climate: "18°C",
-    altitude: "70m",
-    timezone: "UTC-8"
-  },
-  {
-    id: 4,
-    name: "SoFi Stadium",
-    city: "Los Angeles",
-    country: "USA",
-    capacity: "70,240",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/SoFi_Stadium_interior_during_Super_Bowl_LVI.jpg/640px-SoFi_Stadium_interior_during_Super_Bowl_LVI.jpg",
-    cityDescription: "El estadio más caro y tecnológico del mundo, con una pantalla 360 grados.",
-    climate: "28°C",
-    altitude: "35m",
-    timezone: "UTC-8"
-  },
-  {
-    id: 5,
-    name: "AT&T Stadium",
-    city: "Dallas",
-    country: "USA",
-    capacity: "80,000",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Cowboys_Stadium_internal_1.jpg/640px-Cowboys_Stadium_internal_1.jpg",
-    cityDescription: "Una catedral del deporte con techo retráctil en el corazón de Texas.",
-    climate: "30°C",
-    altitude: "180m",
-    timezone: "UTC-6"
-  },
-  {
-    id: 6,
-    name: "BMO Field",
-    city: "Toronto",
-    country: "Canadá",
-    capacity: "45,000",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/BMO_Field_2016_East_Stand.jpg/640px-BMO_Field_2016_East_Stand.jpg",
-    cityDescription: "El hogar del fútbol canadiense a orillas del Lago Ontario.",
-    climate: "20°C",
-    altitude: "76m",
-    timezone: "UTC-5"
-  }
+  { id: 1, name: "Estadio Azteca", city: "Ciudad de México", country: "México", capacity: "87,523", imageUrl: "https://images.unsplash.com/photo-1679947632898-9b6c426ba736?auto=format&fit=crop&w=800&q=80", cityDescription: "El templo del fútbol mexicano.", climate: "22°C", altitude: "2,240m", timezone: "UTC-6" },
+  { id: 2, name: "MetLife Stadium", city: "New York / NJ", country: "USA", capacity: "82,500", imageUrl: "https://images.unsplash.com/photo-1550690991-31dbd0c212db?auto=format&fit=crop&w=800&q=80", cityDescription: "Sede de la Gran Final.", climate: "25°C", altitude: "10m", timezone: "UTC-5" },
+  { id: 3, name: "BC Place", city: "Vancouver", country: "Canadá", capacity: "54,500", imageUrl: "https://images.unsplash.com/photo-1566888596782-c7f41cc1813c?auto=format&fit=crop&w=800&q=80", cityDescription: "Joya arquitectónica moderna.", climate: "18°C", altitude: "70m", timezone: "UTC-8" },
+  { id: 4, name: "SoFi Stadium", city: "Los Angeles", country: "USA", capacity: "70,240", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/SoFi_Stadium_interior_during_Super_Bowl_LVI.jpg/640px-SoFi_Stadium_interior_during_Super_Bowl_LVI.jpg", cityDescription: "El estadio más caro y tecnológico del mundo.", climate: "28°C", altitude: "35m", timezone: "UTC-8" },
+  { id: 5, name: "AT&T Stadium", city: "Dallas", country: "USA", capacity: "80,000", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Cowboys_Stadium_internal_1.jpg/640px-Cowboys_Stadium_internal_1.jpg", cityDescription: "Una catedral del deporte con techo retráctil.", climate: "30°C", altitude: "180m", timezone: "UTC-6" },
+  { id: 6, name: "BMO Field", city: "Toronto", country: "Canadá", capacity: "45,000", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/BMO_Field_2016_East_Stand.jpg/640px-BMO_Field_2016_East_Stand.jpg", cityDescription: "El hogar del fútbol canadiense.", climate: "20°C", altitude: "76m", timezone: "UTC-5" }
 ];
 
 const INITIAL_TEAMS_DATA: Team[] = [
-  { 
-    id: 'mex', name: 'México', code: 'mx', fifaAbbr: 'MEX', ranking: 14, squadValue: '€215M', titles: 0, participations: 17, primaryColor: 'green',
-    squad: [], description: 'Será el primer país en albergar el Mundial por tercera vez. El Tri busca romper la maldición del quinto partido en casa.',
-    coachName: 'Javier Aguirre', coachImage: ''
-  },
-  { 
-    id: 'usa', name: 'USA', code: 'us', fifaAbbr: 'USA', ranking: 11, squadValue: '€348M', titles: 0, participations: 11, primaryColor: 'blue',
-    squad: [], description: 'La generación dorada (Pulisic, Reyna, McKennie) llega en su punto de madurez ideal para hacer historia.',
-    coachName: 'Mauricio Pochettino', coachImage: ''
-  },
-  { 
-    id: 'can', name: 'Canadá', code: 'ca', fifaAbbr: 'CAN', ranking: 48, squadValue: '€190M', titles: 0, participations: 2, primaryColor: 'red',
-    squad: [], description: 'Con Alphonso Davies a la cabeza, Canadá quiere demostrar que su crecimiento futbolístico es una realidad.',
-    coachName: 'Jesse Marsch', coachImage: ''
-  },
-  { 
-    id: 'arg', name: 'Argentina', code: 'ar', fifaAbbr: 'ARG', ranking: 1, squadValue: '€780M', titles: 3, participations: 18, primaryColor: 'blue',
-    squad: [], description: 'El vigente campeón del mundo lidera las eliminatorias de CONMEBOL con comodidad y buscará el bicampeonato.',
-    coachName: 'Lionel Scaloni', coachImage: ''
-  },
-  { 
-    id: 'fra', name: 'Francia', code: 'fr', fifaAbbr: 'FRA', ranking: 2, squadValue: '€1.2B', titles: 2, participations: 16, primaryColor: 'blue',
-    squad: [], description: 'Subcampeón actual. Con Mbappé en su prime, Francia es la potencia europea a vencer en las eliminatorias UEFA.',
-    coachName: 'Didier Deschamps', coachImage: ''
-  },
-  { 
-    id: 'bra', name: 'Brasil', code: 'br', fifaAbbr: 'BRA', ranking: 5, squadValue: '€940M', titles: 5, participations: 22, primaryColor: 'yellow',
-    squad: [], description: 'A pesar de un momento irregular, la Canarinha nunca ha faltado a una cita mundialista y busca su sexta estrella.',
-    coachName: 'Dorival Júnior', coachImage: ''
-  }
+  { id: 'mex', name: 'México', code: 'mx', fifaAbbr: 'MEX', ranking: 14, squadValue: '€215M', titles: 0, participations: 17, primaryColor: 'green', squad: [], description: 'Anfitrión.', coachName: 'Javier Aguirre', coachImage: '' },
+  { id: 'usa', name: 'USA', code: 'us', fifaAbbr: 'USA', ranking: 11, squadValue: '€348M', titles: 0, participations: 11, primaryColor: 'blue', squad: [], description: 'Anfitrión.', coachName: 'Mauricio Pochettino', coachImage: '' },
+  { id: 'can', name: 'Canadá', code: 'ca', fifaAbbr: 'CAN', ranking: 48, squadValue: '€190M', titles: 0, participations: 2, primaryColor: 'red', squad: [], description: 'Anfitrión.', coachName: 'Jesse Marsch', coachImage: '' },
+  { id: 'arg', name: 'Argentina', code: 'ar', fifaAbbr: 'ARG', ranking: 1, squadValue: '€780M', titles: 3, participations: 18, primaryColor: 'blue', squad: [], description: 'Campeón vigente.', coachName: 'Lionel Scaloni', coachImage: '' },
+  { id: 'fra', name: 'Francia', code: 'fr', fifaAbbr: 'FRA', ranking: 2, squadValue: '€1.2B', titles: 2, participations: 16, primaryColor: 'blue', squad: [], description: 'Potencia europea.', coachName: 'Didier Deschamps', coachImage: '' },
+  { id: 'bra', name: 'Brasil', code: 'br', fifaAbbr: 'BRA', ranking: 5, squadValue: '€940M', titles: 5, participations: 22, primaryColor: 'yellow', squad: [], description: 'Pentacampeón.', coachName: 'Dorival Júnior', coachImage: '' }
 ];
 
 const FULL_HISTORY_DATA: HistoryEvent[] = [
-    { 
-        year: 2022, host: "Qatar", champion: "Argentina", bestPlayer: "Lionel Messi", topScorer: "Kylian Mbappé",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Lionel_Messi_WC2022.jpg/640px-Lionel_Messi_WC2022.jpg",
-        description: "La consagración definitiva de Lionel Messi. En la que es considerada la mejor final de la historia, Argentina venció a Francia en los penales tras un electrizante 3-3."
-    },
-    { 
-        year: 2018, host: "Rusia", champion: "Francia", bestPlayer: "Luka Modric", topScorer: "Harry Kane",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/2018_FIFA_World_Cup_Final%2C_France_v_Croatia_15.jpg/640px-2018_FIFA_World_Cup_Final%2C_France_v_Croatia_15.jpg",
-        description: "Francia demostró un poderío físico y una eficacia letal liderada por un joven Kylian Mbappé."
-    },
-    { 
-        year: 2014, host: "Brasil", champion: "Alemania", bestPlayer: "Lionel Messi", topScorer: "James Rodríguez",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Gotze_goal.jpg/640px-Gotze_goal.jpg",
-        description: "Alemania se coronó como la primera selección europea en ganar en América. Recordado por el 7-1 a Brasil."
-    },
-     { 
-        year: 2010, host: "Sudáfrica", champion: "España", bestPlayer: "Diego Forlán", topScorer: "Thomas Müller",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Iniesta_Goal_2010.jpg/640px-Iniesta_Goal_2010.jpg",
-        description: "El primer mundial en suelo africano vio a España alzar su primera copa con su estilo 'Tiki-Taka'."
-    },
-    { 
-        year: 2006, host: "Alemania", champion: "Italia", bestPlayer: "Zinedine Zidane", topScorer: "Miroslav Klose",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Italy_World_Cup_2006_winners.jpg/640px-Italy_World_Cup_2006_winners.jpg",
-        description: "Italia ganó su cuarto título con una defensa impenetrable. Zidane se despidió con un cabezazo."
-    },
-    { 
-        year: 2002, host: "Corea / Japón", champion: "Brasil", bestPlayer: "Oliver Kahn", topScorer: "Ronaldo",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Ronaldo_vs_Germany_2002.jpg/640px-Ronaldo_vs_Germany_2002.jpg",
-        description: "El renacimiento de Ronaldo Nazário, quien anotó 8 goles para el pentacampeonato."
-    },
-    { 
-        year: 1998, host: "Francia", champion: "Francia", bestPlayer: "Ronaldo", topScorer: "Davor Suker",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Zidane_1998.jpg/640px-Zidane_1998.jpg",
-        description: "Zidane se convirtió en leyenda con dos goles en la final ante Brasil."
-    },
-    { 
-        year: 1994, host: "Estados Unidos", champion: "Brasil", bestPlayer: "Romário", topScorer: "Hristo Stoichkov",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Baggio_1994.jpg/640px-Baggio_1994.jpg",
-        description: "Brasil rompió una sequía de 24 años tras penales contra Italia."
-    },
-    { 
-        year: 1990, host: "Italia", champion: "Alemania Fed.", bestPlayer: "Salvatore Schillaci", topScorer: "Salvatore Schillaci",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Matthaus_World_Cup_1990.jpg/640px-Matthaus_World_Cup_1990.jpg",
-        description: "Alemania ganó 1-0 a Argentina con un penal polémico de Brehme."
-    },
-    { 
-        year: 1986, host: "México", champion: "Argentina", bestPlayer: "Diego Maradona", topScorer: "Gary Lineker",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Maradona_World_Cup_1986_holding_trophy.jpg/640px-Maradona_World_Cup_1986_holding_trophy.jpg",
-        description: "El mundial de Diego Maradona y la 'Mano de Dios'."
-    }
+    { year: 2022, host: "Qatar", champion: "Argentina", bestPlayer: "Lionel Messi", topScorer: "Kylian Mbappé", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Lionel_Messi_WC2022.jpg/640px-Lionel_Messi_WC2022.jpg", description: "Argentina campeón." },
+    { year: 2018, host: "Rusia", champion: "Francia", bestPlayer: "Luka Modric", topScorer: "Harry Kane", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/2018_FIFA_World_Cup_Final%2C_France_v_Croatia_15.jpg/640px-2018_FIFA_World_Cup_Final%2C_France_v_Croatia_15.jpg", description: "Francia campeón." },
+    { year: 2014, host: "Brasil", champion: "Alemania", bestPlayer: "Lionel Messi", topScorer: "James Rodríguez", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Gotze_goal.jpg/640px-Gotze_goal.jpg", description: "Alemania campeón." },
+    { year: 2010, host: "Sudáfrica", champion: "España", bestPlayer: "Diego Forlán", topScorer: "Thomas Müller", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Iniesta_Goal_2010.jpg/640px-Iniesta_Goal_2010.jpg", description: "España campeón." },
+    { year: 2006, host: "Alemania", champion: "Italia", bestPlayer: "Zinedine Zidane", topScorer: "Miroslav Klose", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Italy_World_Cup_2006_winners.jpg/640px-Italy_World_Cup_2006_winners.jpg", description: "Italia campeón." },
+    { year: 2002, host: "Corea / Japón", champion: "Brasil", bestPlayer: "Oliver Kahn", topScorer: "Ronaldo", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Ronaldo_vs_Germany_2002.jpg/640px-Ronaldo_vs_Germany_2002.jpg", description: "Brasil campeón." },
+    { year: 1998, host: "Francia", champion: "Francia", bestPlayer: "Ronaldo", topScorer: "Davor Suker", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Zidane_1998.jpg/640px-Zidane_1998.jpg", description: "Francia campeón." },
+    { year: 1994, host: "Estados Unidos", champion: "Brasil", bestPlayer: "Romário", topScorer: "Hristo Stoichkov", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Baggio_1994.jpg/640px-Baggio_1994.jpg", description: "Brasil campeón." },
+    { year: 1990, host: "Italia", champion: "Alemania Fed.", bestPlayer: "Salvatore Schillaci", topScorer: "Salvatore Schillaci", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Matthaus_World_Cup_1990.jpg/640px-Matthaus_World_Cup_1990.jpg", description: "Alemania campeón." },
+    { year: 1986, host: "México", champion: "Argentina", bestPlayer: "Diego Maradona", topScorer: "Gary Lineker", imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Maradona_World_Cup_1986_holding_trophy.jpg/640px-Maradona_World_Cup_1986_holding_trophy.jpg", description: "Argentina campeón." }
 ];
 
 const INITIAL_ADS: AdZone[] = [
@@ -312,7 +146,6 @@ interface EditState {
 }
 
 const App: React.FC = () => {
-  // ... (Estados sin cambios)
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); 
 
@@ -331,14 +164,13 @@ const App: React.FC = () => {
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [isVenueModalOpen, setIsVenueModalOpen] = useState(false);
 
+  // PERSISTENCIA LOCAL (NO NUBE)
   const usePersistedState = <T,>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
     const [state, setState] = useState<T>(() => {
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : initial;
     });
-    useEffect(() => {
-      localStorage.setItem(key, JSON.stringify(state));
-    }, [key, state]);
+    useEffect(() => { localStorage.setItem(key, JSON.stringify(state)); }, [key, state]);
     return [state, setState];
   };
 
@@ -353,37 +185,27 @@ const App: React.FC = () => {
   
   const [groupsData, setGroupsData] = usePersistedState('wc2026_groups', INITIAL_GROUPS);
   const [isGroupsSectionActive, setIsGroupsSectionActive] = usePersistedState('wc2026_groups_active', true);
-
-  // --- ESTADOS DE TABLA DE POSICIONES ---
   const [standingsData, setStandingsData] = usePersistedState('wc2026_standings', INITIAL_STANDINGS);
   const [isStandingsActive, setIsStandingsActive] = usePersistedState('wc2026_standings_active', true);
-
   const [bracketData, setBracketData] = usePersistedState('wc2026_bracket', INITIAL_BRACKET);
   const [isBracketActive, setIsBracketActive] = usePersistedState('wc2026_bracket_active', true);
-  
   const [adZones, setAdZones] = usePersistedState('wc2026_ads', INITIAL_ADS);
-  
   const [showCountdown, setShowCountdown] = usePersistedState('wc2026_show_countdown', true);
-  
   const [tickerText, setTickerText] = usePersistedState('wc2026_ticker', "BIENVENIDOS A LA GUÍA MUNDIAL 2026 • TODA LA INFORMACIÓN EN UN SOLO LUGAR • MÉXICO, ESTADOS UNIDOS Y CANADÁ");
-
   const [gameQuestions, setGameQuestions] = usePersistedState('wc2026_questions', INITIAL_QUESTIONS);
   const [pollConfig, setPollConfig] = usePersistedState('wc2026_poll_config', INITIAL_POLL_CONFIG);
   const [hasVoted, setHasVoted] = usePersistedState('wc2026_user_voted', false);
 
   const [newNews, setNewNews] = useState({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' });
   const [editingNewsId, setEditingNewsId] = useState<number | null>(null); 
-  
   const [visibleNewsCount, setVisibleNewsCount] = useState(6);
-
   const [logoError, setLogoError] = useState(false);
   const [editModal, setEditModal] = useState<EditState>({ isOpen: false, type: null, currentUrl: '' });
   const [tempUrlInput, setTempUrlInput] = useState('');
   const modalFileRef = useRef<HTMLInputElement>(null);
   const newsFileRef = useRef<HTMLInputElement>(null);
 
-  // --- HANDLERS ---
-  // ... (Mismos handlers)
+  // --- HANDLERS (SOLO LOCALES) ---
 
   const handleAdminClick = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
@@ -394,19 +216,20 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLoginSuccess = () => {
-      setIsAdminMode(true);
-  };
+  const handleLoginSuccess = () => { setIsAdminMode(true); };
 
   const handleTeamClick = (team: Team) => { setSelectedTeam(team); setIsTeamModalOpen(true); };
+  
   const handleAddTeam = () => {
     setSelectedTeam({ id: Date.now().toString(), name: 'Nueva Selección', code: '', fifaAbbr: 'N/A', ranking: 0, squadValue: '-', titles: 0, participations: 0, primaryColor: 'gray', description: 'Descripción...', squad: [], coachName: '', coachImage: '' });
     setIsTeamModalOpen(true);
   };
+
   const handleDeleteTeam = (e: React.MouseEvent, id: string) => {
       e.stopPropagation();
       if(confirm('¿Eliminar selección?')) setTeamsData(prev => prev.filter(t => t.id !== id));
   };
+
   const handleTeamUpdate = (updatedTeam: Team) => {
     setTeamsData(prev => {
         const exists = prev.find(t => t.id === updatedTeam.id);
@@ -420,44 +243,30 @@ const App: React.FC = () => {
     setIsNewsModalOpen(true);
   };
 
-  const handleLoadMoreNews = () => {
-    setVisibleNewsCount(prev => prev + 6);
-  };
+  const handleLoadMoreNews = () => { setVisibleNewsCount(prev => prev + 6); };
 
   const handleEditNews = (e: React.MouseEvent, news: NewsItem) => {
       e.stopPropagation();
-      setNewNews({
-          title: news.title,
-          summary: news.summary,
-          content: news.content || '',
-          imageUrl: news.imageUrl,
-          videoUrl: news.videoUrl || ''
-      });
+      setNewNews({ title: news.title, summary: news.summary, content: news.content || '', imageUrl: news.imageUrl, videoUrl: news.videoUrl || '' });
       setEditingNewsId(news.id);
       window.scrollTo({ top: 600, behavior: 'smooth' });
   };
 
   const handleDeleteNews = (e: React.MouseEvent, id: number) => { 
-      e.stopPropagation(); 
-      e.preventDefault();
+      e.stopPropagation(); e.preventDefault();
       if(window.confirm('¿Borrar noticia permanentemente?')) {
           setNewsData(prev => prev.filter(i => i.id !== id)); 
           if (editingNewsId === id) cancelEditNews();
       }
   };
 
-  const cancelEditNews = () => {
-      setNewNews({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' });
-      setEditingNewsId(null);
-  };
+  const cancelEditNews = () => { setNewNews({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' }); setEditingNewsId(null); };
   
   const handleNewsImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
         const reader = new FileReader();
-        reader.onloadend = () => {
-            setNewNews({ ...newNews, imageUrl: reader.result as string });
-        };
+        reader.onloadend = () => { setNewNews({ ...newNews, imageUrl: reader.result as string }); };
         reader.readAsDataURL(file);
     }
   };
@@ -492,10 +301,7 @@ const App: React.FC = () => {
     setEditingNewsId(null);
   };
 
-  const handleHistoryClick = (event: HistoryEvent) => {
-      setSelectedHistoryEvent(event);
-      setIsHistoryModalOpen(true);
-  };
+  const handleHistoryClick = (event: HistoryEvent) => { setSelectedHistoryEvent(event); setIsHistoryModalOpen(true); };
 
   const handleHistoryUpdate = (updatedEvent: HistoryEvent) => {
       setHistoryData(prev => {
@@ -506,89 +312,41 @@ const App: React.FC = () => {
   };
 
   const handleAddHistory = () => {
-      const newEvent: HistoryEvent = {
-          year: new Date().getFullYear(),
-          host: 'Nuevo Anfitrión',
-          champion: 'Nuevo Campeón',
-          bestPlayer: 'Mejor Jugador',
-          imageUrl: 'https://via.placeholder.com/800x600'
-      };
+      const newEvent: HistoryEvent = { year: new Date().getFullYear(), host: 'Nuevo Anfitrión', champion: 'Nuevo Campeón', bestPlayer: 'Mejor Jugador', imageUrl: 'https://via.placeholder.com/800x600' };
       setSelectedHistoryEvent(newEvent);
       setIsHistoryModalOpen(true);
   };
   
   const handleDeleteHistory = (e: React.MouseEvent, year: number) => {
       e.stopPropagation();
-      if(confirm("¿Borrar este mundial del registro?")) {
-          setHistoryData(prev => prev.filter(h => h.year !== year));
-      }
+      if(confirm("¿Borrar este mundial del registro?")) setHistoryData(prev => prev.filter(h => h.year !== year));
   }
 
-  const handleEditVenue = (venue: Venue) => {
-      if(isAdminMode) {
-          setSelectedVenue(venue);
-          setIsVenueModalOpen(true);
-      }
-  };
+  const handleEditVenue = (venue: Venue) => { if(isAdminMode) { setSelectedVenue(venue); setIsVenueModalOpen(true); } };
 
   const handleAddVenue = () => {
-      const newVenue: Venue = {
-          id: Date.now(),
-          name: 'Nuevo Estadio',
-          city: 'Ciudad',
-          country: 'País',
-          capacity: '0',
-          imageUrl: 'https://via.placeholder.com/800x600',
-          cityDescription: 'Descripción...',
-          climate: '-',
-          altitude: '-',
-          timezone: 'UTC'
-      };
+      const newVenue: Venue = { id: Date.now(), name: 'Nuevo Estadio', city: 'Ciudad', country: 'País', capacity: '0', imageUrl: 'https://via.placeholder.com/800x600', cityDescription: 'Descripción...', climate: '-', altitude: '-', timezone: 'UTC' };
       setSelectedVenue(newVenue);
       setIsVenueModalOpen(true);
   };
 
   const handleVenueUpdate = (updatedVenue: Venue) => {
-      setVenuesData(prev => {
-          const exists = prev.find(v => v.id === updatedVenue.id);
-          return exists ? prev.map(v => v.id === updatedVenue.id ? updatedVenue : v) : [...prev, updatedVenue];
-      });
+      setVenuesData(prev => { const exists = prev.find(v => v.id === updatedVenue.id); return exists ? prev.map(v => v.id === updatedVenue.id ? updatedVenue : v) : [...prev, updatedVenue]; });
   };
 
   const handleDeleteVenue = (e: React.MouseEvent, id: number) => {
       e.stopPropagation();
-      if(confirm("¿Borrar esta sede?")) {
-          setVenuesData(prev => prev.filter(v => v.id !== id));
-      }
+      if(confirm("¿Borrar esta sede?")) setVenuesData(prev => prev.filter(v => v.id !== id));
   };
 
   const handleAdUpdate = (updatedZone: AdZone) => setAdZones(prev => prev.map(z => z.id === updatedZone.id ? updatedZone : z));
 
-  const openEditModal = (type: 'logo' | 'venue' | 'history' | 'header', currentUrl: string, id?: number) => {
-    setTempUrlInput(currentUrl);
-    setEditModal({ isOpen: true, type, targetId: id, currentUrl });
-  };
+  const openEditModal = (type: 'logo' | 'venue' | 'history' | 'header', currentUrl: string, id?: number) => { setTempUrlInput(currentUrl); setEditModal({ isOpen: true, type, targetId: id, currentUrl }); };
   const handleSaveEdit = () => { if (tempUrlInput.trim()) applyImageChange(tempUrlInput); };
-  const applyImageChange = (url: string) => {
-    if (editModal.type === 'logo') setCustomLogo(url);
-    else if (editModal.type === 'header') setHeaderBg(url);
-    setEditModal({ ...editModal, isOpen: false });
-    setLogoError(false);
-  };
-  const handleModalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => { setTempUrlInput(reader.result as string); applyImageChange(reader.result as string); };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleVote = (optionId: string) => {
-    const newOptions = pollConfig.options.map(opt => opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt);
-    setPollConfig({ ...pollConfig, options: newOptions });
-    setHasVoted(true);
-  };
+  const applyImageChange = (url: string) => { if (editModal.type === 'logo') setCustomLogo(url); else if (editModal.type === 'header') setHeaderBg(url); setEditModal({ ...editModal, isOpen: false }); setLogoError(false); };
+  const handleModalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setTempUrlInput(reader.result as string); applyImageChange(reader.result as string); }; reader.readAsDataURL(file); } };
+  
+  const handleVote = (optionId: string) => { const newOptions = pollConfig.options.map(opt => opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt); setPollConfig({ ...pollConfig, options: newOptions }); setHasVoted(true); };
 
   const visibleNews = newsData.slice(0, visibleNewsCount);
   const visibleHistory = showAllHistory ? historyData : historyData.slice(0, 6);
@@ -597,7 +355,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-wc-black text-gray-100 font-sans selection:bg-wc-green selection:text-black">
       
-      {/* Admin Bar */}
+      {/* Admin Bar (OFFLINE) */}
       {isAdminMode && (
         <div className="fixed bottom-0 left-0 w-full bg-[#00eaff] text-black z-[90] px-4 py-3 flex justify-between items-center shadow-[0_-5px_20px_rgba(0,234,255,0.3)] animate-slide-up border-t-4 border-white">
           <div className="flex items-center gap-3">
@@ -605,11 +363,7 @@ const App: React.FC = () => {
             <div>
               <p className="font-black text-sm uppercase tracking-widest">Modo Edición Activo</p>
               <div className="flex items-center gap-2">
-                  <p className="text-xs opacity-80 font-bold">Tienes control total.</p>
-                  {/* Indicador de Conexión (Simulado) */}
-                  <span className="flex items-center gap-1 text-[10px] bg-white/20 px-2 rounded-full border border-black/10">
-                      <Database size={8} className="text-green-600" fill="currentColor"/> DB: ONLINE
-                  </span>
+                  <p className="text-xs opacity-80 font-bold">Tienes control total (Local).</p>
               </div>
             </div>
           </div>
@@ -648,18 +402,11 @@ const App: React.FC = () => {
       <header className="relative min-h-[75vh] flex flex-col justify-center items-center overflow-hidden pb-10">
         <div className="absolute inset-0 z-0">
           <img src={headerBg} alt="Header" className="w-full h-full object-cover"/>
-          
-          {/* DEGRADADOS CINEMATOGRÁFICOS MULTICAPA */}
-          {/* 1. Oscurecimiento General */}
           <div className="absolute inset-0 bg-black/30"></div>
-          {/* 2. Vignette Radial (Sombra en las esquinas) */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_100%)] opacity-80"></div>
-          {/* 3. Bottom Fade (Fundido hacia el contenido inferior) */}
           <div className="absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-[#0a0a0a] via-black/80 to-transparent"></div>
-          
         </div>
         
-        {/* News Ticker Overlay */}
         <div className="absolute top-0 left-0 w-full z-20">
              <NewsTicker text={tickerText} isAdminMode={isAdminMode} onUpdate={setTickerText} />
         </div>
@@ -1026,7 +773,6 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          {/* Botón de Ver Más / Ver Menos Historia */}
           <div className="flex justify-center">
             {!showAllHistory && historyData.length > 6 && (
                 <button 
