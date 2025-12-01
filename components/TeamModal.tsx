@@ -221,9 +221,10 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                                 className="bg-black/50 border border-zinc-600 w-24 text-wc-blue font-mono font-bold px-2 py-1 rounded text-center"
                                 placeholder="ABR"
                             />
+                             {/* BOTÓN GUARDAR CAMBIOS SÓLIDO */}
                              <button 
                                 onClick={saveChanges}
-                                className="bg-green-600 text-white px-6 py-1 rounded-full font-bold text-sm flex items-center gap-2 hover:bg-green-500 transition-colors shadow-[0_0_10px_rgba(34,197,94,0.4)]"
+                                className="bg-[#a3ff00] text-black px-6 py-1 rounded-full font-black text-sm flex items-center gap-2 hover:bg-white transition-colors shadow-md border border-black"
                             >
                                 <Save size={16} /> GUARDAR CAMBIOS
                             </button>
@@ -352,7 +353,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                                     <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20" onClick={() => jerseyInputRef.current?.click()}>
                                         <Camera size={32} className="text-white mb-2"/>
                                         <span className="text-xs font-bold text-white uppercase">Subir Camiseta</span>
-                                        <span className="text-[10px] text-gray-400 mt-1">PNG Transparente (500x600)</span>
+                                        <span className="text-xs text-gray-400 mt-1">PNG Transparente (500x600)</span>
                                     </div>
                                 )}
                                 <input type="file" ref={jerseyInputRef} className="hidden" accept="image/*" onChange={handleJerseyUpload}/>
@@ -378,7 +379,8 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                              <span className="bg-wc-blue/20 text-wc-blue px-3 py-1 rounded-full text-xs font-bold border border-wc-blue/30">{editedTeam.squad.length} / 26</span>
                          </div>
                          {isAdminMode && (
-                             <button onClick={handleAddPlayer} className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-blue-500 shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-all">
+                             /* BOTÓN AGREGAR JUGADOR SÓLIDO */
+                             <button onClick={handleAddPlayer} className="bg-[#00eaff] text-black px-6 py-2 rounded-full font-black flex items-center gap-2 hover:bg-white shadow-md transition-all border border-black">
                                  <Plus size={20} /> AGREGAR JUGADOR
                              </button>
                          )}
@@ -410,7 +412,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                                     <div className="h-64 w-full relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
                                         <div className={`absolute inset-0 opacity-20 bg-gradient-to-b ${getPositionStyle(player.position).split(' ')[0]} to-black`}></div>
                                         {player.imageUrl ? (
-                                            <img src={player.imageUrl} className="w-full h-full object-cover object-top transition-transform group-hover:scale-110 duration-500" alt={player.name} />
+                                            <img src={player.imageUrl} className="w-full h-full object-cover object-top transition-transform group-hover:scale-105 duration-500" alt={player.name} />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-700">
                                                 <User size={80} />
@@ -440,11 +442,11 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                                         </div>
                                     </div>
 
-                                    {/* Botón Eliminar (Solo Admin) */}
+                                    {/* Botón Eliminar (Solo Admin) SÓLIDO */}
                                     {isAdminMode && (
                                         <button 
                                             onClick={(e) => handleDeletePlayer(e, player.id)} 
-                                            className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all z-20 scale-90 group-hover:scale-100 shadow-lg"
+                                            className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all z-20 scale-90 group-hover:scale-100 shadow-lg border border-red-400"
                                         >
                                             <Trash2 size={16}/>
                                         </button>
@@ -552,7 +554,8 @@ const TeamModal: React.FC<TeamModalProps> = ({ team, isOpen, onClose, isAdminMod
                                 </div>
                             </div>
 
-                            <button onClick={savePlayer} className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-500 hover:scale-[1.02] transition-all mt-4 shadow-lg flex items-center justify-center gap-2">
+                            {/* BOTÓN GUARDAR JUGADOR SÓLIDO */}
+                            <button onClick={savePlayer} className="w-full bg-[#a3ff00] text-black font-black py-4 rounded-xl hover:bg-white hover:scale-[1.02] transition-all mt-4 shadow-lg flex items-center justify-center gap-2 border border-black">
                                 <Save size={20} /> GUARDAR JUGADOR
                             </button>
 

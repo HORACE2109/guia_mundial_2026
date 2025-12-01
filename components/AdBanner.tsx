@@ -13,10 +13,8 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
   const fileInputRef1 = useRef<HTMLInputElement>(null);
   const fileInputRef2 = useRef<HTMLInputElement>(null);
 
-  // Si no es admin y la zona está apagada, no mostramos nada
   if (!isAdminMode && !zone.active) return null;
 
-  // Función para convertir archivo a Base64
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, imageNum: 1 | 2) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -33,14 +31,13 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
     }
   };
 
-  const triggerFileSelect = (inputRef: React.RefObject<HTMLInputElement | null>) => { // Changed RefObject type
+  const triggerFileSelect = (inputRef: React.RefObject<HTMLInputElement | null>) => {
     inputRef.current?.click();
   };
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-8 my-6 animate-fade-in-up">
       
-      {/* --- PANEL DE CONTROL ADMIN --- */}
       {isAdminMode && (
         <div className="bg-zinc-900 border-2 border-dashed border-wc-purple/50 rounded-xl p-4 mb-4 relative group hover:border-wc-purple transition-colors">
           <div className="absolute -top-3 left-4 bg-wc-purple text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
@@ -76,13 +73,13 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
                 </div>
             </div>
 
-            {/* Controles de Carga de Imagen */}
+            {/* Controles de Carga de Imagen - Botones Sólidos Azules */}
             <div className="flex gap-2">
                 <div className="flex items-center gap-2 bg-black/50 p-1.5 rounded border border-zinc-700">
                     <span className="text-xs text-gray-400 font-mono px-1">IMG 1</span>
                     <button 
                         onClick={() => triggerFileSelect(fileInputRef1)}
-                        className="bg-zinc-800 hover:bg-zinc-700 text-white p-1.5 rounded transition-colors"
+                        className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded transition-colors shadow border border-blue-400"
                         title="Subir Imagen 1 desde PC"
                     >
                         <Upload size={14} />
@@ -95,7 +92,7 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
                         <span className="text-xs text-gray-400 font-mono px-1">IMG 2</span>
                          <button 
                             onClick={() => triggerFileSelect(fileInputRef2)}
-                            className="bg-zinc-800 hover:bg-zinc-700 text-white p-1.5 rounded transition-colors"
+                            className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded transition-colors shadow border border-blue-400"
                             title="Subir Imagen 2 desde PC"
                         >
                             <Upload size={14} />
@@ -112,10 +109,8 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
         </div>
       )}
 
-      {/* --- VISTA PÚBLICA DEL BANNER --- */}
       {zone.active && (
         <div className={`grid gap-4 ${zone.layout === 'full' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-            {/* Banner 1 */}
             <div className="relative group overflow-hidden rounded-lg border border-white/5">
                 {zone.image1 ? (
                     <img src={zone.image1} alt="Publicidad" className="w-full h-32 md:h-48 object-cover" />
@@ -130,7 +125,6 @@ const AdBanner: React.FC<AdBannerProps> = ({ zone, isAdminMode, onUpdate }) => {
                 )}
             </div>
 
-            {/* Banner 2 (Solo si es Split) */}
             {zone.layout === 'split' && (
                 <div className="relative group overflow-hidden rounded-lg border border-white/5">
                      {zone.image2 ? (

@@ -19,11 +19,9 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
 
   if (!isActive && !isAdminMode) return null;
 
-  // --- LOGICA DE EDICIÓN ---
-  
   const startEditing = (groupId: string, teams: StandingTeam[]) => {
     setEditingGroupId(groupId);
-    setTempTeams(JSON.parse(JSON.stringify(teams))); // Deep copy
+    setTempTeams(JSON.parse(JSON.stringify(teams)));
   };
 
   const cancelEditing = () => {
@@ -35,20 +33,10 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
   const handleStatChange = (index: number, field: keyof StandingTeam, value: string) => {
     const numValue = parseInt(value) || 0;
     const newTeams = [...tempTeams];
-    
-    // Actualizamos el campo editado
     (newTeams[index] as any)[field] = numValue;
-
-    // AUTO-CALCULOS
-    // 1. Puntos: (PG * 3) + (PE * 1)
     newTeams[index].pts = (newTeams[index].pg * 3) + newTeams[index].pe;
-    
-    // 2. PJ: PG + PE + PP
     newTeams[index].pj = newTeams[index].pg + newTeams[index].pe + newTeams[index].pp;
-
-    // 3. Diferencia: GF - GC
     newTeams[index].dif = newTeams[index].gf - newTeams[index].gc;
-
     setTempTeams(newTeams);
   };
 
@@ -73,16 +61,12 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
 
   const saveGroup = () => {
     if (editingGroupId) {
-      // Ordenar automáticamente al guardar: PTS DESC, DIF DESC, GF DESC
       const sortedTeams = [...tempTeams].sort((a, b) => {
           if (b.pts !== a.pts) return b.pts - a.pts;
           if (b.dif !== a.dif) return b.dif - a.dif;
           return b.gf - a.gf;
       });
-
-      const updatedStandings = standings.map(g => 
-        g.id === editingGroupId ? { ...g, teams: sortedTeams } : g
-      );
+      const updatedStandings = standings.map(g => g.id === editingGroupId ? { ...g, teams: sortedTeams } : g);
       onUpdate(updatedStandings);
       setEditingGroupId(null);
       setTempTeams([]);
@@ -93,7 +77,6 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
     <section className={`py-12 bg-black border-t border-zinc-800 relative ${!isActive ? 'opacity-50 grayscale' : ''}`}>
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* Header Control Admin */}
         {isAdminMode && (
             <div className="absolute top-4 left-4 z-10 flex gap-2">
                 <button 
@@ -122,26 +105,24 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
              return (
                 <div key={group.id} className={`bg-zinc-900 border rounded-xl overflow-hidden transition-all ${isEditing ? 'border-wc-blue ring-2 ring-wc-blue/30 scale-[1.02] z-20' : 'border-zinc-800 hover:border-zinc-600'}`}>
                     
-                    {/* Header Grupo */}
                     <div className="bg-zinc-800 px-4 py-3 flex justify-between items-center border-b border-zinc-700">
                         <h3 className="font-black text-white text-lg italic">GRUPO {group.id}</h3>
                         
                         {isAdminMode && !isEditing && (
-                            <button onClick={() => startEditing(group.id, group.teams)} className="text-gray-500 hover:text-wc-blue p-1 rounded hover:bg-black">
-                                <Edit2 size={16} />
+                            <button onClick={() => startEditing(group.id, group.teams)} className="bg-white text-black p-1.5 rounded-full shadow hover:bg-gray-200 transition-transform hover:scale-110 border border-black">
+                                <Edit2 size={14} />
                             </button>
                         )}
                         {isAdminMode && isEditing && (
                              <div className="flex gap-2">
-                                <button onClick={cancelEditing} className="text-red-400 hover:text-white text-xs font-bold px-2">Cancelar</button>
-                                <button onClick={saveGroup} className="bg-wc-blue text-black px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 hover:bg-white">
+                                <button onClick={cancelEditing} className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold hover:bg-red-500 border border-black">Cancelar</button>
+                                <button onClick={saveGroup} className="bg-[#a3ff00] text-black px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 hover:bg-white border border-black">
                                     <Save size={14} /> Guardar
                                 </button>
                              </div>
                         )}
                     </div>
 
-                    {/* Tabla */}
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -159,10 +140,8 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
                             </thead>
                             <tbody className="text-xs md:text-sm">
                                 {teamsToRender.map((team, idx) => {
-                                    // Colores de clasificación
                                     let rowBg = "border-b border-zinc-800";
                                     let posColor = "text-gray-500";
-                                    
                                     if (!isEditing) {
                                         if (idx < 2) { rowBg += " bg-green-900/10 hover:bg-green-900/20"; posColor = "text-green-500 font-bold"; }
                                         else if (idx === 2) { rowBg += " hover:bg-yellow-900/10"; posColor = "text-yellow-500"; }
@@ -194,10 +173,7 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
                                                     )}
                                                 </div>
                                             </td>
-
-                                            {/* Celdas de Stats */}
                                             {isEditing ? (
-                                                // MODO EDICIÓN: INPUTS
                                                 <>
                                                     <td className="p-1 text-center font-mono text-gray-500">{team.pj}</td>
                                                     <td className="p-1"><input className="w-full bg-zinc-800 text-center text-white p-1 rounded focus:bg-black outline-none" type="number" value={team.pg} onChange={(e) => handleStatChange(idx, 'pg', e.target.value)} /></td>
@@ -209,7 +185,6 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
                                                     <td className="p-1 text-center font-black font-mono text-wc-blue">{team.pts}</td>
                                                 </>
                                             ) : (
-                                                // MODO VISUALIZACIÓN
                                                 <>
                                                     <td className="p-2 text-center text-gray-300 font-mono">{team.pj}</td>
                                                     <td className="p-2 text-center text-gray-400">{team.pg}</td>
@@ -231,10 +206,7 @@ const StandingsSection: React.FC<StandingsSectionProps> = ({ standings, isActive
              );
           })}
         </div>
-        
-        {/* Input Oculto para Banderas */}
         <input type="file" ref={flagInputRef} className="hidden" accept="image/*" onChange={handleFlagUpload} />
-
       </div>
     </section>
   );

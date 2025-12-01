@@ -45,7 +45,7 @@ const VenueModal: React.FC<VenueModalProps> = ({ venue, isOpen, onClose, isAdmin
       }
   };
 
-  if (!isAdminMode) return null; // Este modal es solo para admins por ahora (edición)
+  if (!isAdminMode) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -53,7 +53,6 @@ const VenueModal: React.FC<VenueModalProps> = ({ venue, isOpen, onClose, isAdmin
 
       <div className="relative bg-zinc-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-zinc-700 animate-fade-in-up flex flex-col max-h-[90vh] overflow-y-auto custom-scrollbar">
         
-        {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-zinc-800">
             <h2 className="text-2xl font-black text-white uppercase italic">
                 {editedVenue.id ? 'Editar Sede' : 'Nueva Sede'}
@@ -63,7 +62,6 @@ const VenueModal: React.FC<VenueModalProps> = ({ venue, isOpen, onClose, isAdmin
 
         <div className="p-6 space-y-6">
             
-            {/* Imagen Principal */}
             <div 
                 className="relative h-48 rounded-xl overflow-hidden bg-black border-2 border-dashed border-zinc-700 hover:border-wc-blue cursor-pointer group"
                 onClick={() => fileInputRef.current?.click()}
@@ -84,7 +82,6 @@ const VenueModal: React.FC<VenueModalProps> = ({ venue, isOpen, onClose, isAdmin
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload}/>
             </div>
 
-            {/* Campos de Texto */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="col-span-1 md:col-span-2">
                     <label className="text-xs text-wc-blue font-bold uppercase block mb-1">Nombre del Estadio</label>
@@ -128,7 +125,6 @@ const VenueModal: React.FC<VenueModalProps> = ({ venue, isOpen, onClose, isAdmin
                 />
             </div>
 
-            {/* Datos Técnicos */}
             <div className="grid grid-cols-3 gap-3 bg-zinc-800/30 p-4 rounded-xl border border-white/5">
                 <div>
                     <label className="text-[10px] text-gray-500 font-bold uppercase block mb-1 flex items-center gap-1"><Users size={10}/> Aforo</label>
@@ -164,7 +160,7 @@ const VenueModal: React.FC<VenueModalProps> = ({ venue, isOpen, onClose, isAdmin
         <div className="p-6 pt-0">
             <button 
                 onClick={handleSubmit}
-                className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-500 transition-colors shadow-lg flex items-center justify-center gap-2"
+                className="w-full bg-[#a3ff00] text-black font-black py-4 rounded-xl hover:bg-white transition-colors shadow-lg flex items-center justify-center gap-2 border border-black"
             >
                 <Save size={20}/> GUARDAR SEDE
             </button>

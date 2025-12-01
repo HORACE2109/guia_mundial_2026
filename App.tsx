@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, Facebook, Twitter, Instagram, Trophy, Plus, Trash2, Lock, Check, ImageOff, Edit2, Settings, X, Save, Upload, Camera, Star, Medal, Shield, ChevronDown, ChevronUp, PlayCircle, LogOut, RefreshCw, Users, Eye, EyeOff, MapPin } from 'lucide-react';
+import { ChevronRight, Facebook, Twitter, Instagram, Trophy, Plus, Trash2, Lock, Check, ImageOff, Edit2, Settings, X, Save, Upload, Camera, Star, Medal, Shield, ChevronDown, ChevronUp, PlayCircle, LogOut, RefreshCw, Users, Eye, EyeOff, MapPin, Database, CloudUpload, AlertTriangle, Activity } from 'lucide-react';
 import Countdown from './components/Countdown';
 import TeamModal from './components/TeamModal';
 import NewsModal from './components/NewsModal';
@@ -16,6 +17,7 @@ import StandingsSection from './components/StandingsSection';
 import BracketSection from './components/BracketSection'; 
 import NewsTicker from './components/NewsTicker';
 import { Team, NewsItem, Venue, HistoryEvent, AdZone, GameQuestion, PollConfig, FeaturedNewsItem, WorldCupGroup, BracketMatch, GroupStanding, StandingTeam, Player } from './types';
+import { supabase } from './src/supabaseClient';
 
 // ==========================================
 // 🟢 CONFIGURACIÓN INICIAL
@@ -146,25 +148,24 @@ interface EditState {
 }
 
 const App: React.FC = () => {
+  // --- ESTADOS PRINCIPALES ---
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); 
+  const [dbConnected, setDbConnected] = useState(false); 
+  const [isSyncing, setIsSyncing] = useState(false); 
+  const [dbError, setDbError] = useState<string | null>(null);
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false); 
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [showAllVenues, setShowAllVenues] = useState(false);
-
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
-  
   const [selectedHistoryEvent, setSelectedHistoryEvent] = useState<HistoryEvent | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [isVenueModalOpen, setIsVenueModalOpen] = useState(false);
 
-  // PERSISTENCIA LOCAL (NO NUBE)
   const usePersistedState = <T,>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
     const [state, setState] = useState<T>(() => {
       const saved = localStorage.getItem(key);
@@ -176,13 +177,11 @@ const App: React.FC = () => {
 
   const [headerBg, setHeaderBg] = usePersistedState('wc2026_header_bg', "https://images.unsplash.com/photo-1522778119026-d647f0565c6a?auto=format&fit=crop&w=1920&q=80");
   const [customLogo, setCustomLogo] = usePersistedState('wc2026_logo', DEFAULT_LOGO_URL);
-  
   const [featuredNews, setFeaturedNews] = usePersistedState('wc2026_featured', INITIAL_FEATURED_NEWS);
   const [newsData, setNewsData] = usePersistedState('wc2026_news', INITIAL_NEWS_DATA);
   const [venuesData, setVenuesData] = usePersistedState('wc2026_venues', INITIAL_VENUES_DATA);
   const [teamsData, setTeamsData] = usePersistedState('wc2026_teams', INITIAL_TEAMS_DATA);
   const [historyData, setHistoryData] = usePersistedState('wc2026_history', FULL_HISTORY_DATA);
-  
   const [groupsData, setGroupsData] = usePersistedState('wc2026_groups', INITIAL_GROUPS);
   const [isGroupsSectionActive, setIsGroupsSectionActive] = usePersistedState('wc2026_groups_active', true);
   const [standingsData, setStandingsData] = usePersistedState('wc2026_standings', INITIAL_STANDINGS);
@@ -205,147 +204,146 @@ const App: React.FC = () => {
   const modalFileRef = useRef<HTMLInputElement>(null);
   const newsFileRef = useRef<HTMLInputElement>(null);
 
-  // --- HANDLERS (SOLO LOCALES) ---
+  // --- SINCRONIZACIÓN SUPABASE ---
+  useEffect(() => {
+    const syncWithSupabase = async () => {
+        try {
+            // 1. Comprobar conexión intentando leer la tabla 'news'
+            const { data: dbNews, error: newsError } = await supabase.from('news').select('count', { count: 'exact', head: true });
+            
+            if (!newsError) {
+                setDbConnected(true);
+                setDbError(null);
+                // Cargar datos
+                const { data: news } = await supabase.from('news').select('*').order('id', { ascending: false });
+                if(news?.length) setNewsData(news.map((n: any) => ({ id: n.id, title: n.title, summary: n.summary, content: n.content, imageUrl: n.image_url, videoUrl: n.video_url, date: n.date })));
+                
+                const { data: venues } = await supabase.from('venues').select('*').order('id');
+                if(venues?.length) setVenuesData(venues.map((v: any) => ({ id: v.id, name: v.name, city: v.city, country: v.country, capacity: v.capacity, imageUrl: v.image_url, cityDescription: v.city_description, climate: v.climate, altitude: v.altitude, timezone: v.timezone })));
 
-  const handleAdminClick = (e?: React.MouseEvent) => {
-    if (e) e.preventDefault();
-    if (isAdminMode) {
-        setIsAdminMode(false);
-    } else {
-        setIsAuthModalOpen(true);
-    }
+                const { data: history } = await supabase.from('history').select('*').order('year', { ascending: false });
+                if(history?.length) setHistoryData(history.map((h: any) => ({ year: h.year, host: h.host, champion: h.champion, imageUrl: h.image_url, description: h.description, bestPlayer: h.best_player, bestPlayerImage: h.best_player_image, topScorer: h.top_scorer, topScorerImage: h.top_scorer_image })));
+
+                const { data: teams } = await supabase.from('teams').select('*, players(*)');
+                if(teams?.length) setTeamsData(teams.map((t: any) => ({ id: t.id, name: t.name, code: t.code, fifaAbbr: t.fifa_abbr, ranking: t.ranking, squadValue: t.squad_value, titles: t.titles, participations: t.participations, primaryColor: t.primary_color, logoUrl: t.logo_url, description: t.description, coachName: t.coach_name, coachImage: t.coach_image, jerseyImage: t.jersey_image, squad: t.players ? t.players.map((p: any) => ({ id: p.id, name: p.name, position: p.position, number: p.number, club: p.club, age: p.age, height: p.height, weight: p.weight, worldCups: p.world_cups, imageUrl: p.image_url })) : [] })));
+            } else {
+                setDbConnected(false);
+                setDbError("OFFLINE");
+            }
+        } catch (error) {
+            setDbConnected(false);
+        }
+    };
+    syncWithSupabase();
+  }, []);
+
+  // --- MANUAL TEST CONNECTION ---
+  const testConnection = async () => {
+      const { error } = await supabase.from('news').select('count', { count: 'exact', head: true });
+      if(error) alert("❌ Error de conexión: " + error.message + "\n\n¿Creaste las tablas en Supabase?");
+      else alert("✅ ¡Conexión exitosa a Supabase!");
   };
 
-  const handleLoginSuccess = () => { setIsAdminMode(true); };
-
-  const handleTeamClick = (team: Team) => { setSelectedTeam(team); setIsTeamModalOpen(true); };
-  
-  const handleAddTeam = () => {
-    setSelectedTeam({ id: Date.now().toString(), name: 'Nueva Selección', code: '', fifaAbbr: 'N/A', ranking: 0, squadValue: '-', titles: 0, participations: 0, primaryColor: 'gray', description: 'Descripción...', squad: [], coachName: '', coachImage: '' });
-    setIsTeamModalOpen(true);
-  };
-
-  const handleDeleteTeam = (e: React.MouseEvent, id: string) => {
-      e.stopPropagation();
-      if(confirm('¿Eliminar selección?')) setTeamsData(prev => prev.filter(t => t.id !== id));
-  };
-
-  const handleTeamUpdate = (updatedTeam: Team) => {
-    setTeamsData(prev => {
-        const exists = prev.find(t => t.id === updatedTeam.id);
-        return exists ? prev.map(t => t.id === updatedTeam.id ? updatedTeam : t) : [...prev, updatedTeam];
-    });
-    setSelectedTeam(updatedTeam);
-  };
-
-  const handleNewsClick = (news: NewsItem) => {
-    setSelectedNews(news);
-    setIsNewsModalOpen(true);
-  };
-
-  const handleLoadMoreNews = () => { setVisibleNewsCount(prev => prev + 6); };
-
-  const handleEditNews = (e: React.MouseEvent, news: NewsItem) => {
-      e.stopPropagation();
-      setNewNews({ title: news.title, summary: news.summary, content: news.content || '', imageUrl: news.imageUrl, videoUrl: news.videoUrl || '' });
-      setEditingNewsId(news.id);
-      window.scrollTo({ top: 600, behavior: 'smooth' });
-  };
-
-  const handleDeleteNews = (e: React.MouseEvent, id: number) => { 
-      e.stopPropagation(); e.preventDefault();
-      if(window.confirm('¿Borrar noticia permanentemente?')) {
-          setNewsData(prev => prev.filter(i => i.id !== id)); 
-          if (editingNewsId === id) cancelEditNews();
+  // --- FORCE SYNC ---
+  const handleForceSync = async () => {
+      if (!confirm("⚠️ ¿Subir datos a la nube? Esto llenará la base de datos con los datos locales actuales.")) return;
+      setIsSyncing(true);
+      try {
+          // 1. News
+          for (const n of newsData) {
+              const { error } = await supabase.from('news').upsert({ title: n.title, summary: n.summary, content: n.content, image_url: n.imageUrl, video_url: n.videoUrl, date: n.date });
+              if(error) throw error;
+          }
+          // 2. Venues
+          for (const v of venuesData) {
+              const { error } = await supabase.from('venues').upsert({ name: v.name, city: v.city, country: v.country, capacity: v.capacity, image_url: v.imageUrl, city_description: v.cityDescription, climate: v.climate, altitude: v.altitude, timezone: v.timezone });
+              if(error) throw error;
+          }
+          // 3. History
+          for (const h of historyData) {
+              const { error } = await supabase.from('history').upsert({ year: h.year, host: h.host, champion: h.champion, image_url: h.imageUrl, description: h.description, best_player: h.bestPlayer, best_player_image: h.bestPlayerImage, top_scorer: h.topScorer, top_scorer_image: h.topScorerImage });
+              if(error) throw error;
+          }
+          // 4. Teams
+          for (const t of teamsData) {
+              const { error } = await supabase.from('teams').upsert({ id: t.id, name: t.name, code: t.code, fifa_abbr: t.fifaAbbr, ranking: t.ranking, squad_value: t.squadValue, titles: t.titles, participations: t.participations, primary_color: t.primaryColor, logo_url: t.logoUrl, description: t.description, coach_name: t.coachName, coach_image: t.coachImage, jersey_image: t.jerseyImage });
+              if(error) throw error;
+          }
+          alert("✅ Datos subidos correctamente a la nube.");
+          setDbConnected(true);
+          setDbError(null);
+      } catch (e: any) {
+          alert("❌ Error al subir datos: " + e.message);
+      } finally {
+          setIsSyncing(false);
       }
   };
 
-  const cancelEditNews = () => { setNewNews({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' }); setEditingNewsId(null); };
-  
-  const handleNewsImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => { setNewNews({ ...newNews, imageUrl: reader.result as string }); };
-        reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSaveNews = (e: React.FormEvent) => {
+  // ... (RESTO DE HANDLERS CON DB LOGIC) ...
+  const handleSaveNews = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNews.title) return;
-
+    const newsObjectForDB = { title: newNews.title, summary: newNews.summary, content: newNews.content || newNews.summary, image_url: newNews.imageUrl, video_url: newNews.videoUrl, date: new Date().toLocaleDateString() };
+    let updatedList = [...newsData];
     if (editingNewsId) {
-        setNewsData(prev => prev.map(item => item.id === editingNewsId ? {
-            ...item,
-            title: newNews.title,
-            summary: newNews.summary,
-            content: newNews.content,
-            imageUrl: newNews.imageUrl,
-            videoUrl: newNews.videoUrl
-        } : item));
-        alert("Noticia actualizada");
+        updatedList = newsData.map(item => item.id === editingNewsId ? { ...item, ...newNews, content: newNews.content || item.summary } : item);
+        const { error } = await supabase.from('news').update(newsObjectForDB).eq('id', editingNewsId);
+        if(error) alert("Error al guardar en nube: " + error.message);
     } else {
-        const newItem: NewsItem = {
-            id: Date.now(),
-            title: newNews.title,
-            summary: newNews.summary,
-            content: newNews.content || newNews.summary, 
-            date: new Date().toLocaleDateString(),
-            imageUrl: newNews.imageUrl || "https://via.placeholder.com/800x600",
-            videoUrl: newNews.videoUrl
-        };
-        setNewsData([newItem, ...newsData]);
+        const newItem: NewsItem = { id: Date.now(), date: new Date().toLocaleDateString(), ...newNews, content: newNews.content || newNews.summary, imageUrl: newNews.imageUrl || "https://via.placeholder.com/800x600" };
+        updatedList = [newItem, ...newsData];
+        const { error } = await supabase.from('news').insert(newsObjectForDB);
+        if(error) alert("Error al guardar en nube: " + error.message);
     }
-    setNewNews({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' });
-    setEditingNewsId(null);
+    setNewsData(updatedList); setNewNews({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' }); setEditingNewsId(null);
   };
 
-  const handleHistoryClick = (event: HistoryEvent) => { setSelectedHistoryEvent(event); setIsHistoryModalOpen(true); };
-
-  const handleHistoryUpdate = (updatedEvent: HistoryEvent) => {
-      setHistoryData(prev => {
-          const exists = prev.find(e => e.year === updatedEvent.year);
-          return exists ? prev.map(e => e.year === updatedEvent.year ? updatedEvent : e) : [updatedEvent, ...prev].sort((a,b) => b.year - a.year);
-      });
-      setSelectedHistoryEvent(updatedEvent);
+  const handleTeamUpdate = async (updatedTeam: Team) => {
+    setTeamsData(prev => { const exists = prev.find(t => t.id === updatedTeam.id); return exists ? prev.map(t => t.id === updatedTeam.id ? updatedTeam : t) : [...prev, updatedTeam]; });
+    setSelectedTeam(updatedTeam);
+    const teamDB = { id: updatedTeam.id, name: updatedTeam.name, code: updatedTeam.code, fifa_abbr: updatedTeam.fifaAbbr, ranking: updatedTeam.ranking, squad_value: updatedTeam.squadValue, titles: updatedTeam.titles, participations: updatedTeam.participations, primary_color: updatedTeam.primaryColor, logo_url: updatedTeam.logoUrl, description: updatedTeam.description, coach_name: updatedTeam.coachName, coach_image: updatedTeam.coachImage, jersey_image: updatedTeam.jerseyImage };
+    const { error } = await supabase.from('teams').upsert(teamDB);
+    if(error) alert("Error: " + error.message);
   };
 
-  const handleAddHistory = () => {
-      const newEvent: HistoryEvent = { year: new Date().getFullYear(), host: 'Nuevo Anfitrión', champion: 'Nuevo Campeón', bestPlayer: 'Mejor Jugador', imageUrl: 'https://via.placeholder.com/800x600' };
-      setSelectedHistoryEvent(newEvent);
-      setIsHistoryModalOpen(true);
-  };
-  
-  const handleDeleteHistory = (e: React.MouseEvent, year: number) => {
-      e.stopPropagation();
-      if(confirm("¿Borrar este mundial del registro?")) setHistoryData(prev => prev.filter(h => h.year !== year));
-  }
-
-  const handleEditVenue = (venue: Venue) => { if(isAdminMode) { setSelectedVenue(venue); setIsVenueModalOpen(true); } };
-
-  const handleAddVenue = () => {
-      const newVenue: Venue = { id: Date.now(), name: 'Nuevo Estadio', city: 'Ciudad', country: 'País', capacity: '0', imageUrl: 'https://via.placeholder.com/800x600', cityDescription: 'Descripción...', climate: '-', altitude: '-', timezone: 'UTC' };
-      setSelectedVenue(newVenue);
-      setIsVenueModalOpen(true);
-  };
-
-  const handleVenueUpdate = (updatedVenue: Venue) => {
+  const handleVenueUpdate = async (updatedVenue: Venue) => {
       setVenuesData(prev => { const exists = prev.find(v => v.id === updatedVenue.id); return exists ? prev.map(v => v.id === updatedVenue.id ? updatedVenue : v) : [...prev, updatedVenue]; });
+      const venueDB = { name: updatedVenue.name, city: updatedVenue.city, country: updatedVenue.country, capacity: updatedVenue.capacity, image_url: updatedVenue.imageUrl, city_description: updatedVenue.cityDescription, climate: updatedVenue.climate, altitude: updatedVenue.altitude, timezone: updatedVenue.timezone };
+      const { error } = await supabase.from('venues').upsert(venueDB);
+      if(error) alert("Error: " + error.message);
   };
 
-  const handleDeleteVenue = (e: React.MouseEvent, id: number) => {
-      e.stopPropagation();
-      if(confirm("¿Borrar esta sede?")) setVenuesData(prev => prev.filter(v => v.id !== id));
+  const handleHistoryUpdate = async (updatedEvent: HistoryEvent) => {
+      setHistoryData(prev => { const exists = prev.find(e => e.year === updatedEvent.year); return exists ? prev.map(e => e.year === updatedEvent.year ? updatedEvent : e) : [updatedEvent, ...prev].sort((a,b) => b.year - a.year); });
+      setSelectedHistoryEvent(updatedEvent);
+      const historyDB = { year: updatedEvent.year, host: updatedEvent.host, champion: updatedEvent.champion, image_url: updatedEvent.imageUrl, description: updatedEvent.description, best_player: updatedEvent.bestPlayer, best_player_image: updatedEvent.bestPlayerImage, top_scorer: updatedEvent.topScorer, top_scorer_image: updatedEvent.topScorerImage };
+      const { error } = await supabase.from('history').upsert(historyDB);
+      if(error) alert("Error: " + error.message);
   };
 
+  // --- HANDLERS UI ---
+  const handleAdminClick = (e?: React.MouseEvent) => { if (e) e.preventDefault(); if (isAdminMode) setIsAdminMode(false); else setIsAuthModalOpen(true); };
+  const handleLoginSuccess = () => { setIsAdminMode(true); };
+  const handleTeamClick = (team: Team) => { setSelectedTeam(team); setIsTeamModalOpen(true); };
+  const handleAddTeam = () => { setSelectedTeam({ id: Date.now().toString(), name: 'Nueva Selección', code: '', fifaAbbr: 'N/A', ranking: 0, squadValue: '-', titles: 0, participations: 0, primaryColor: 'gray', description: 'Descripción...', squad: [], coachName: '', coachImage: '' }); setIsTeamModalOpen(true); };
+  const handleDeleteTeam = (e: React.MouseEvent, id: string) => { e.stopPropagation(); if(confirm('¿Eliminar selección?')) setTeamsData(prev => prev.filter(t => t.id !== id)); };
+  const handleNewsClick = (news: NewsItem) => { setSelectedNews(news); setIsNewsModalOpen(true); };
+  const handleLoadMoreNews = () => { setVisibleNewsCount(prev => prev + 6); };
+  const handleEditNews = (e: React.MouseEvent, news: NewsItem) => { e.stopPropagation(); setNewNews({ title: news.title, summary: news.summary, content: news.content || '', imageUrl: news.imageUrl, videoUrl: news.videoUrl || '' }); setEditingNewsId(news.id); window.scrollTo({ top: 600, behavior: 'smooth' }); };
+  const handleDeleteNews = (e: React.MouseEvent, id: number) => { e.stopPropagation(); e.preventDefault(); if(window.confirm('¿Borrar noticia permanentemente?')) { setNewsData(prev => prev.filter(i => i.id !== id)); if (editingNewsId === id) cancelEditNews(); } };
+  const cancelEditNews = () => { setNewNews({ title: '', summary: '', content: '', imageUrl: '', videoUrl: '' }); setEditingNewsId(null); };
+  const handleNewsImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setNewNews({ ...newNews, imageUrl: reader.result as string }); }; reader.readAsDataURL(file); } };
+  const handleHistoryClick = (event: HistoryEvent) => { setSelectedHistoryEvent(event); setIsHistoryModalOpen(true); };
+  const handleAddHistory = () => { const newEvent: HistoryEvent = { year: new Date().getFullYear(), host: 'Nuevo Anfitrión', champion: 'Nuevo Campeón', bestPlayer: 'Mejor Jugador', imageUrl: 'https://via.placeholder.com/800x600' }; setSelectedHistoryEvent(newEvent); setIsHistoryModalOpen(true); };
+  const handleDeleteHistory = (e: React.MouseEvent, year: number) => { e.stopPropagation(); if(confirm("¿Borrar este mundial del registro?")) { setHistoryData(prev => prev.filter(h => h.year !== year)); } }
+  const handleEditVenue = (venue: Venue) => { if(isAdminMode) { setSelectedVenue(venue); setIsVenueModalOpen(true); } };
+  const handleAddVenue = () => { const newVenue: Venue = { id: Date.now(), name: 'Nuevo Estadio', city: 'Ciudad', country: 'País', capacity: '0', imageUrl: 'https://via.placeholder.com/800x600', cityDescription: 'Descripción...', climate: '-', altitude: '-', timezone: 'UTC' }; setSelectedVenue(newVenue); setIsVenueModalOpen(true); };
+  const handleDeleteVenue = (e: React.MouseEvent, id: number) => { e.stopPropagation(); if(confirm("¿Borrar esta sede?")) { setVenuesData(prev => prev.filter(v => v.id !== id)); } };
   const handleAdUpdate = (updatedZone: AdZone) => setAdZones(prev => prev.map(z => z.id === updatedZone.id ? updatedZone : z));
-
   const openEditModal = (type: 'logo' | 'venue' | 'history' | 'header', currentUrl: string, id?: number) => { setTempUrlInput(currentUrl); setEditModal({ isOpen: true, type, targetId: id, currentUrl }); };
   const handleSaveEdit = () => { if (tempUrlInput.trim()) applyImageChange(tempUrlInput); };
   const applyImageChange = (url: string) => { if (editModal.type === 'logo') setCustomLogo(url); else if (editModal.type === 'header') setHeaderBg(url); setEditModal({ ...editModal, isOpen: false }); setLogoError(false); };
   const handleModalFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) { const reader = new FileReader(); reader.onloadend = () => { setTempUrlInput(reader.result as string); applyImageChange(reader.result as string); }; reader.readAsDataURL(file); } };
-  
   const handleVote = (optionId: string) => { const newOptions = pollConfig.options.map(opt => opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt); setPollConfig({ ...pollConfig, options: newOptions }); setHasVoted(true); };
 
   const visibleNews = newsData.slice(0, visibleNewsCount);
@@ -355,7 +353,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-wc-black text-gray-100 font-sans selection:bg-wc-green selection:text-black">
       
-      {/* Admin Bar (OFFLINE) */}
+      {/* Admin Bar */}
       {isAdminMode && (
         <div className="fixed bottom-0 left-0 w-full bg-[#00eaff] text-black z-[90] px-4 py-3 flex justify-between items-center shadow-[0_-5px_20px_rgba(0,234,255,0.3)] animate-slide-up border-t-4 border-white">
           <div className="flex items-center gap-3">
@@ -363,16 +361,39 @@ const App: React.FC = () => {
             <div>
               <p className="font-black text-sm uppercase tracking-widest">Modo Edición Activo</p>
               <div className="flex items-center gap-2">
-                  <p className="text-xs opacity-80 font-bold">Tienes control total (Local).</p>
+                  <p className="text-xs opacity-80 font-bold">Tienes control total.</p>
+                  {/* Indicador de Conexión */}
+                  <span className={`flex items-center gap-1 text-[10px] px-2 rounded-full border font-black ${dbConnected ? 'bg-green-500/20 text-green-900 border-green-900/20' : 'bg-red-600 text-white border-red-800'}`}>
+                      {dbConnected ? <Database size={10} /> : <AlertTriangle size={10} />}
+                      {dbConnected ? 'DB: ONLINE' : dbError || 'OFFLINE'}
+                  </span>
               </div>
             </div>
           </div>
+          
+          {/* BOTÓN DE PRUEBA MANUAL */}
+          <button onClick={testConnection} className="bg-yellow-500 text-black px-4 py-1 rounded-full text-[10px] font-black hover:bg-yellow-400 border-2 border-black">
+              <Activity size={12}/> PROBAR CONEXIÓN
+          </button>
+
+          {/* BOTÓN DE SUBIDA FORZADA */}
+          <button 
+            onClick={handleForceSync}
+            disabled={isSyncing}
+            className="bg-purple-600 text-white px-6 py-2 rounded-full text-xs font-black hover:bg-purple-500 flex items-center gap-2 shadow-lg border-2 border-white mx-4 hover:scale-105 transition-transform"
+          >
+            {isSyncing ? <><RefreshCw size={14} className="animate-spin"/> SUBIENDO...</> : <><CloudUpload size={16}/> FORZAR SUBIDA A NUBE</>}
+          </button>
+
           <button onClick={(e) => handleAdminClick(e)} className="bg-white text-black px-6 py-2 rounded-full text-xs font-black hover:bg-red-600 hover:text-white transition-colors flex items-center gap-2 border-2 border-black shadow-lg">
               <LogOut size={12} /> SALIR
           </button>
         </div>
       )}
 
+      {/* ... (RESTO DE LA INTERFAZ IGUAL) ... */}
+      {/* ... (Modales, Header, Secciones...) ... */}
+      
       {/* Image Edit Modal */}
       {editModal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -527,7 +548,7 @@ const App: React.FC = () => {
               </div>
 
               {/* BOTÓN PUBLICAR - ALTO CONTRASTE (FONDO AZUL / TEXTO BLANCO) */}
-              <button type="submit" className={`w-full font-black px-6 py-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.01] bg-blue-600 text-white hover:bg-blue-500 border border-blue-400`}>
+              <button type="submit" className={`w-full font-black px-6 py-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.01] bg-[#a3ff00] text-black hover:bg-white border-2 border-black`}>
                 {editingNewsId ? <><RefreshCw size={20} /> ACTUALIZAR NOTICIA</> : <><Check size={20} /> PUBLICAR NOTICIA</>}
               </button>
             </form>

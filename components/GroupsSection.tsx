@@ -15,12 +15,10 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [tempTeams, setTempTeams] = useState<GroupTeam[]>([]);
 
-  // Si está inactivo y no soy admin, no mostrar nada
   if (!isActive && !isAdminMode) return null;
 
   const handleEditGroup = (group: WorldCupGroup) => {
     setEditingGroupId(group.id);
-    // Deep copy para evitar mutaciones directas
     setTempTeams(JSON.parse(JSON.stringify(group.teams)));
   };
 
@@ -57,7 +55,6 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
     <section className={`py-12 bg-wc-black border-t border-zinc-800 relative ${!isActive ? 'opacity-50 grayscale' : ''}`}>
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* Header Control Admin - Botones Sólidos */}
         {isAdminMode && (
             <div className="absolute top-4 left-4 z-10">
                 <button 
@@ -82,7 +79,6 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
           {groups.map((group) => (
             <div key={group.id} className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden hover:border-wc-blue/30 transition-colors group relative">
                 
-                {/* Group Header */}
                 <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 p-4 border-b border-zinc-700 flex justify-between items-center">
                     <span className="text-4xl font-black text-white/20 italic absolute right-2 top-0 pointer-events-none select-none">
                         {group.id}
@@ -94,28 +90,28 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
                     {isAdminMode && editingGroupId !== group.id && (
                         <button 
                             onClick={() => handleEditGroup(group)} 
-                            className="text-gray-500 hover:text-wc-blue relative z-10"
+                            className="bg-white text-black p-2 rounded-full hover:bg-gray-200 shadow-md relative z-10 transition-transform hover:scale-110 border border-black"
+                            title="Editar Grupo"
                         >
-                            <Edit2 size={16}/>
+                            <Edit2 size={14}/>
                         </button>
                     )}
                     {isAdminMode && editingGroupId === group.id && (
                          <button 
                             onClick={saveGroup} 
-                            className="text-wc-green hover:text-white relative z-10 bg-zinc-900 p-1 rounded-full border border-wc-green"
+                            className="bg-[#a3ff00] text-black p-2 rounded-full hover:bg-white shadow-md relative z-10 transition-transform hover:scale-110 border border-black"
+                            title="Guardar Grupo"
                         >
-                            <Save size={16}/>
+                            <Save size={14}/>
                         </button>
                     )}
                 </div>
 
-                {/* Group Body (Teams List) */}
                 <div className="p-4 space-y-2">
                     {(editingGroupId === group.id ? tempTeams : group.teams).map((team, idx) => (
                         <div key={idx} className="flex items-center gap-3 p-2 rounded bg-black/40 border border-transparent hover:border-white/5">
                             <span className="text-gray-600 font-mono text-xs w-4">{idx + 1}</span>
                             
-                            {/* Bandera */}
                             <div className="relative group/flag flex-shrink-0">
                                 <div className="w-8 h-5 bg-zinc-700 rounded-sm overflow-hidden flex items-center justify-center border border-white/10 relative">
                                     {team.flag ? (
@@ -124,7 +120,6 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
                                         <div className="w-full h-full bg-zinc-800"></div>
                                     )}
                                     
-                                    {/* Upload Flag Button (Only Editing) */}
                                     {editingGroupId === group.id && (
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                                             <label 
@@ -163,7 +158,6 @@ const GroupsSection: React.FC<GroupsSectionProps> = ({ groups, isActive, isAdmin
                     ))}
                 </div>
                 
-                {/* Texto de ayuda medidas en modo edición */}
                 {editingGroupId === group.id && (
                     <div className="px-4 pb-2 text-center border-t border-zinc-800 pt-2">
                         <span className="text-[10px] text-yellow-500 font-mono">Banderas: 48x32 px (aprox)</span>
